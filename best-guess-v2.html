@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Best Guess</title>
+            <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 375px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Title Screen Styles */
+        .title-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .game-title {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeInScale 0.8s ease-out forwards;
+        }
+
+        .game-subtitle {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeInSlide 0.8s ease-out 0.3s forwards;
+        }
+
+        .title-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        .title-buttons button {
+            opacity: 0;
+            animation: fadeInSlide 0.8s ease-out forwards;
+        }
+
+        .title-buttons button:first-child {
+            animation-delay: 0.5s;
+        }
+
+        .title-buttons button:last-child {
+            animation-delay: 0.7s;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 350px;
+            width: 100%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .modal-content h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .modal-content p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .close-modal {
+            width: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .player-setup {
+            margin-bottom: 20px;
+        }
+
+        .player-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #5a5fd8;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .category-btn {
+            padding: 20px;
+            text-align: center;
+            background: #f5f5f5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .category-btn:hover {
+            background: #e8e8e8;
+            border-color: #667eea;
+        }
+
+        .question-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .current-player {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .current-player h3 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .guess-input {
+            max-width: 300px;
+            margin: 0 auto 20px;
+        }
+
+        .results-list {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .player-result {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .player-result:last-child {
+            border-bottom: none;
+        }
+
+        .correct-answer {
+            text-align: center;
+            font-size: 2em;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .explanation {
+            background: #e8f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .scores {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-weight: 500;
+        }
+
+        .winner-announcement {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .winner-announcement h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .trophy {
+            font-size: 4em;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 8px;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #667eea;
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Title Screen -->
+        <div id="titleScreen" class="screen active">
+            <div class="title-screen">
+                <h1 class="game-title">Best Guess</h1>
+                <p class="game-subtitle">Reason your way to greatness</p>
+                <div class="title-buttons">
+                    <button onclick="showInstructions()">Instructions</button>
+                    <button onclick="showSetupScreen()">Play</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions Modal -->
+        <div id="instructionsModal" class="modal">
+            <div class="modal-content">
+                <h3>How to Play</h3>
+                <p>These are questions you won't know the answer to, but you can reason your way to a good guess!</p>
+                <p>Take a maximum of about 20 seconds to think through each answer. The closest guess wins!</p>
+                <button class="close-modal" onclick="closeInstructions()">Got it!</button>
+            </div>
+        </div>
+        
+        <!-- Player Setup Screen -->
+        <div id="setupScreen" class="screen">
+            <h1>Best Guess</h1>
+            <h2>Enter Players (2-4)</h2>
+            <div class="player-setup">
+                <div class="player-input">
+                    <input type="text" id="player1" placeholder="Player 1 name" />
+                </div>
+                <div class="player-input">
+                    <input type="text" id="player2" placeholder="Player 2 name" />
+                </div>
+                <div class="player-input">
+                    <input type="text" id="player3" placeholder="Player 3 name (optional)" />
+                </div>
+                <div class="player-input">
+                    <input type="text" id="player4" placeholder="Player 4 name (optional)" />
+                </div>
+            </div>
+            <div class="btn-group">
+                <button onclick="startGame()">Next: Choose Category</button>
+            </div>
+        </div>
+
+        <!-- Category Selection Screen -->
+        <div id="categoryScreen" class="screen">
+            <h1>Best Guess</h1>
+            <h2>Choose a Category</h2>
+            <div class="category-grid">
+                <div class="category-btn" onclick="selectCategory('natural-history')">
+                    <div>🦖</div>
+                    <div>Natural History</div>
+                </div>
+                <div class="category-btn" onclick="selectCategory('human-history')">
+                    <div>🏛️</div>
+                    <div>Human History</div>
+                </div>
+                <div class="category-btn" onclick="selectCategory('sports')">
+                    <div>⚽</div>
+                    <div>Sports</div>
+                </div>
+                <div class="category-btn" onclick="selectCategory('geography')">
+                    <div>🌍</div>
+                    <div>Geography</div>
+                </div>
+                <div class="category-btn" onclick="selectCategory('science')">
+                    <div>🔬</div>
+                    <div>Science & Nature</div>
+                </div>
+                <div class="category-btn" onclick="selectCategory('mixed')">
+                    <div>🎲</div>
+                    <div>Mixed Bag</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="questionScreen" class="screen">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="current-player">
+                <h3>Current Player</h3>
+                <div id="currentPlayerName"></div>
+            </div>
+            <div class="question-container">
+                <div class="question-text" id="questionText"></div>
+                <div class="guess-input">
+                    <input type="number" id="guessInput" placeholder="Enter your guess" />
+                </div>
+                <button onclick="submitGuess()">Submit Guess</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="screen">
+            <h2>Results</h2>
+            <div class="correct-answer">
+                Correct Answer: <span id="correctAnswer"></span>
+            </div>
+            <div class="results-list" id="resultsList"></div>
+            <div class="explanation" id="explanation"></div>
+            <div class="scores" id="currentScores"></div>
+            <div class="btn-group">
+                <button onclick="nextQuestion()">Next Question</button>
+            </div>
+        </div>
+
+        <!-- Final Results Screen -->
+        <div id="finalScreen" class="screen">
+            <div class="winner-announcement">
+                <div class="trophy">🏆</div>
+                <h2 id="winnerName"></h2>
+                <p>Wins with <span id="winnerScore"></span> points!</p>
+            </div>
+            <div class="scores" id="finalScores"></div>
+            <div class="btn-group">
+                <button onclick="resetGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let players = [];
+        let currentPlayerIndex = 0;
+        let currentQuestionIndex = 0;
+        let currentGuesses = [];
+        let scores = {};
+        let selectedCategory = '';
+        let questions = [];
+
+        // Title screen functions
+        function showInstructions() {
+            document.getElementById('instructionsModal').classList.add('active');
+        }
+
+        function closeInstructions() {
+            document.getElementById('instructionsModal').classList.remove('active');
+        }
+
+        function showSetupScreen() {
+            showScreen('setupScreen');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('instructionsModal');
+            if (event.target == modal) {
+                closeInstructions();
+            }
+        }
+
+        // Question database
+        const questionDatabase = {
+            'natural-history': [
+                {
+                    question: "How many species of ants are there in the world?",
+                    answer: 12000,
+                    explanation: "Scientists have identified approximately 12,000 species of ants worldwide, though estimates suggest there may be as many as 20,000 species total."
+                },
+                {
+                    question: "How many teeth does a great white shark have at any given time?",
+                    answer: 300,
+                    explanation: "Great white sharks have about 300 teeth arranged in multiple rows. They continuously shed and replace teeth throughout their lives."
+                },
+                {
+                    question: "How many years ago did the dinosaurs go extinct?",
+                    answer: 66000000,
+                    explanation: "Dinosaurs went extinct approximately 66 million years ago at the end of the Cretaceous period, likely due to an asteroid impact."
+                },
+                {
+                    question: "What is the wingspan of a wandering albatross in feet?",
+                    answer: 11,
+                    explanation: "The wandering albatross has the largest wingspan of any living bird, reaching up to 11.2 feet from tip to tip."
+                },
+                {
+                    question: "How many bones are in an adult giraffe's neck?",
+                    answer: 7,
+                    explanation: "Despite their long necks, giraffes have the same number of neck vertebrae as humans and most other mammals: just 7!"
+                },
+                {
+                    question: "How many times per minute does a hummingbird's heart beat?",
+                    answer: 1260,
+                    explanation: "A hummingbird's heart can beat up to 1,260 times per minute during flight, the fastest heart rate of any bird."
+                },
+                {
+                    question: "How many eyes does a honeybee have?",
+                    answer: 5,
+                    explanation: "Honeybees have 5 eyes total: 2 large compound eyes and 3 smaller simple eyes called ocelli on top of their head."
+                },
+                {
+                    question: "What is the lifespan of a giant tortoise in years?",
+                    answer: 150,
+                    explanation: "Giant tortoises can live over 150 years, with some individuals documented to have lived over 175 years."
+                },
+                {
+                    question: "How many pounds can a leafcutter ant carry?",
+                    answer: 0.88,
+                    explanation: "Leafcutter ants can carry pieces of leaves weighing up to 20 times their body weight, about 0.88 pounds for a large worker."
+                },
+                {
+                    question: "How many miles do monarch butterflies migrate?",
+                    answer: 3000,
+                    explanation: "Monarch butterflies can migrate up to 3,000 miles from Canada to Mexico, one of the longest insect migrations."
+                },
+                {
+                    question: "How many tentacles does an octopus have?",
+                    answer: 8,
+                    explanation: "Octopuses have 8 tentacles (technically called arms), each containing about 240 suckers."
+                },
+                {
+                    question: "What percentage of their body weight do hummingbirds consume daily?",
+                    answer: 50,
+                    explanation: "Hummingbirds must consume about 50% of their body weight in nectar each day to fuel their extremely high metabolism."
+                },
+                {
+                    question: "How many chambers does a cow's stomach have?",
+                    answer: 4,
+                    explanation: "Cows have a complex stomach with 4 chambers: rumen, reticulum, omasum, and abomasum, allowing them to digest tough plant material."
+                },
+                {
+                    question: "How many quills does an average porcupine have?",
+                    answer: 30000,
+                    explanation: "An average porcupine has about 30,000 quills covering its body, which are actually modified hairs."
+                },
+                {
+                    question: "How fast can a cheetah run in mph?",
+                    answer: 70,
+                    explanation: "Cheetahs can reach speeds of 70 mph in short bursts, making them the fastest land animal."
+                }
+            ],
+            'human-history': [
+                {
+                    question: "How many people were alive on Earth in the year 1000?",
+                    answer: 310000000,
+                    explanation: "Historians estimate the world population in 1000 CE was approximately 310 million people, with the majority living in Asia."
+                },
+                {
+                    question: "In what year was the Great Wall of China begun?",
+                    answer: -221,
+                    explanation: "The first unified Great Wall was built starting in 221 BCE under Emperor Qin Shi Huang, though earlier walls existed."
+                },
+                {
+                    question: "In 1800, what percentage of U.S. households had indoor plumbing?",
+                    answer: 0,
+                    explanation: "Indoor plumbing was virtually non-existent in 1800. Even by 1900, only about 10% of U.S. homes had indoor plumbing."
+                },
+                {
+                    question: "How many people died in World War I (in millions)?",
+                    answer: 17,
+                    explanation: "World War I resulted in approximately 17 million deaths, including both military personnel and civilians."
+                },
+                {
+                    question: "In what year did humans first walk on the moon?",
+                    answer: 1969,
+                    explanation: "Neil Armstrong and Buzz Aldrin first walked on the moon on July 20, 1969, during the Apollo 11 mission."
+                },
+                {
+                    question: "How many people died in the Black Death pandemic (in millions)?",
+                    answer: 75,
+                    explanation: "The Black Death killed an estimated 75-200 million people in Eurasia and North Africa from 1347 to 1353."
+                },
+                {
+                    question: "How many years did the Roman Empire last?",
+                    answer: 1000,
+                    explanation: "The Roman Empire lasted approximately 1,000 years, from 27 BCE (Augustus) to 476 CE (fall of Western Empire)."
+                },
+                {
+                    question: "How many ships did Columbus have on his first voyage?",
+                    answer: 3,
+                    explanation: "Columbus sailed with three ships on his first voyage in 1492: the Niña, the Pinta, and the Santa María."
+                },
+                {
+                    question: "What was the population of London in 1800?",
+                    answer: 1000000,
+                    explanation: "London's population reached about 1 million by 1800, making it the world's largest city at the time."
+                },
+                {
+                    question: "How many years did the Hundred Years' War actually last?",
+                    answer: 116,
+                    explanation: "Despite its name, the Hundred Years' War between England and France actually lasted 116 years, from 1337 to 1453."
+                },
+                {
+                    question: "How many people could the Colosseum in Rome hold?",
+                    answer: 50000,
+                    explanation: "The Colosseum could hold an estimated 50,000 to 80,000 spectators, making it one of the largest amphitheaters ever built."
+                },
+                {
+                    question: "In what year was the printing press invented?",
+                    answer: 1440,
+                    explanation: "Johannes Gutenberg invented the movable-type printing press around 1440 in Mainz, Germany."
+                },
+                {
+                    question: "How many people crossed on the Mayflower?",
+                    answer: 102,
+                    explanation: "The Mayflower carried 102 passengers plus crew from England to the New World in 1620."
+                },
+                {
+                    question: "How tall was the Great Pyramid when first built (in feet)?",
+                    answer: 481,
+                    explanation: "The Great Pyramid of Giza originally stood 481 feet tall, though erosion has reduced it to about 455 feet today."
+                },
+                {
+                    question: "How many witches were executed in Salem?",
+                    answer: 20,
+                    explanation: "During the Salem Witch Trials of 1692-1693, 20 people were executed (19 by hanging, 1 by pressing)."
+                }
+            ],
+            'sports': [
+                {
+                    question: "What is the average salary of the top 30 NBA players in millions of dollars?",
+                    answer: 45,
+                    explanation: "The top 30 NBA players earn an average of approximately $45 million per year, with superstars earning over $50 million."
+                },
+                {
+                    question: "How many dimples are on a regulation golf ball?",
+                    answer: 336,
+                    explanation: "Most regulation golf balls have between 300-500 dimples, with 336 being the most common number."
+                },
+                {
+                    question: "What is the maximum speed of a tennis serve in mph?",
+                    answer: 164,
+                    explanation: "The fastest tennis serve ever recorded was 163.7 mph (263.4 km/h) by Sam Groth in 2012."
+                },
+                {
+                    question: "How many yards long is an Olympic swimming pool?",
+                    answer: 55,
+                    explanation: "Olympic swimming pools are 50 meters long, which equals approximately 54.7 yards."
+                },
+                {
+                    question: "How many panels does a traditional soccer ball have?",
+                    answer: 32,
+                    explanation: "A traditional soccer ball has 32 panels: 12 pentagonal and 20 hexagonal panels stitched together."
+                },
+                {
+                    question: "How many miles is a marathon?",
+                    answer: 26,
+                    explanation: "A marathon is exactly 26.219 miles (42.195 kilometers) long, standardized at the 1908 London Olympics."
+                },
+                {
+                    question: "What is the maximum weight of a bowling ball in pounds?",
+                    answer: 16,
+                    explanation: "The maximum weight allowed for a bowling ball in regulation play is 16 pounds."
+                },
+                {
+                    question: "How many players are on the field in American football?",
+                    answer: 22,
+                    explanation: "American football has 22 players on the field at once: 11 on offense and 11 on defense."
+                },
+                {
+                    question: "How many laps are in the Indianapolis 500?",
+                    answer: 200,
+                    explanation: "The Indianapolis 500 consists of 200 laps around the 2.5-mile oval track, totaling 500 miles."
+                },
+                {
+                    question: "What is the diameter of a basketball hoop in inches?",
+                    answer: 18,
+                    explanation: "A regulation basketball hoop has a diameter of 18 inches, while a basketball is about 9.5 inches in diameter."
+                },
+                {
+                    question: "How many hot dogs did Joey Chestnut eat in 10 minutes to win the 2021 contest?",
+                    answer: 76,
+                    explanation: "Joey Chestnut ate 76 hot dogs and buns in 10 minutes at the 2021 Nathan's Hot Dog Eating Contest, breaking his own world record."
+                },
+                {
+                    question: "How many career home runs did Babe Ruth hit?",
+                    answer: 714,
+                    explanation: "Babe Ruth hit 714 home runs during his career, a record that stood for 33 years until Hank Aaron broke it in 1974."
+                },
+                {
+                    question: "What is the speed of the fastest baseball pitch ever recorded in mph?",
+                    answer: 106,
+                    explanation: "Aroldis Chapman threw the fastest recorded pitch at 105.8 mph in 2016."
+                },
+                {
+                    question: "How many consecutive games did Cal Ripken Jr. play?",
+                    answer: 2632,
+                    explanation: "Cal Ripken Jr. played in 2,632 consecutive games from 1982 to 1998, breaking Lou Gehrig's previous record of 2,130."
+                },
+                {
+                    question: "How many holes are on a standard golf course?",
+                    answer: 18,
+                    explanation: "A standard golf course has 18 holes, typically played as two sets of 9 holes (front nine and back nine)."
+                }
+            ],
+            'geography': [
+                {
+                    question: "How many times heavier is Earth than the Moon?",
+                    answer: 81,
+                    explanation: "Earth is approximately 81 times more massive than the Moon. Earth's mass is about 5.97 × 10²⁴ kg while the Moon's is 7.35 × 10²² kg."
+                },
+                {
+                    question: "How many gas stations are there in the United States?",
+                    answer: 145000,
+                    explanation: "There are approximately 145,000 gas stations in the United States, down from a peak of about 200,000 in the 1990s."
+                },
+                {
+                    question: "What is the depth of the Mariana Trench in feet?",
+                    answer: 36070,
+                    explanation: "The Mariana Trench reaches a maximum depth of 36,070 feet (10,994 meters) at a point called Challenger Deep."
+                },
+                {
+                    question: "How many countries are there in Africa?",
+                    answer: 54,
+                    explanation: "Africa contains 54 recognized sovereign nations, making it the continent with the most countries."
+                },
+                {
+                    question: "What percentage of Earth's surface is covered by water?",
+                    answer: 71,
+                    explanation: "Approximately 71% of Earth's surface is covered by water, with oceans holding about 96.5% of all Earth's water."
+                },
+                {
+                    question: "How many miles long is the Amazon River?",
+                    answer: 4000,
+                    explanation: "The Amazon River is approximately 4,000 miles (6,400 km) long, making it one of the world's longest rivers."
+                },
+                {
+                    question: "What is the height of Mount Everest in feet?",
+                    answer: 29032,
+                    explanation: "Mount Everest stands at 29,032 feet (8,849 meters) above sea level, the highest point on Earth."
+                },
+                {
+                    question: "How many time zones does Russia span?",
+                    answer: 11,
+                    explanation: "Russia spans 11 time zones, more than any other country, stretching from UTC+2 to UTC+12."
+                },
+                {
+                    question: "What percentage of the world's oxygen comes from the Amazon rainforest?",
+                    answer: 6,
+                    explanation: "The Amazon produces about 6% of the world's oxygen. Most oxygen actually comes from ocean phytoplankton."
+                },
+                {
+                    question: "How many islands does Sweden have?",
+                    answer: 267570,
+                    explanation: "Sweden has an estimated 267,570 islands, more than any other country, though only about 1,000 are inhabited."
+                },
+                {
+                    question: "What is the population of Tokyo metropolitan area in millions?",
+                    answer: 38,
+                    explanation: "The Greater Tokyo Area has about 38 million people, making it the world's most populous metropolitan area."
+                },
+                {
+                    question: "How many miles wide is the Grand Canyon at its widest point?",
+                    answer: 18,
+                    explanation: "The Grand Canyon reaches 18 miles wide at its widest point, though it averages 10 miles across."
+                },
+                {
+                    question: "What percentage of Antarctica is covered by ice?",
+                    answer: 98,
+                    explanation: "About 98% of Antarctica is covered by ice, which averages at least 1 mile in thickness."
+                },
+                {
+                    question: "How many hurricanes form in the Atlantic Ocean in an average year?",
+                    answer: 12,
+                    explanation: "On average, 12 tropical storms form in the Atlantic each year, with 6 becoming hurricanes and 3 becoming major hurricanes."
+                },
+                {
+                    question: "How many miles is the circumference of Earth at the equator?",
+                    answer: 24901,
+                    explanation: "Earth's circumference at the equator is 24,901 miles (40,075 kilometers)."
+                }
+            ],
+            'science': [
+                {
+                    question: "How many elements are on the periodic table?",
+                    answer: 118,
+                    explanation: "As of 2024, there are 118 confirmed elements on the periodic table, with Oganesson (Og) being the most recent."
+                },
+                {
+                    question: "What is the speed of light in miles per second?",
+                    answer: 186000,
+                    explanation: "The speed of light in a vacuum is approximately 186,282 miles per second, often rounded to 186,000 miles/second."
+                },
+                {
+                    question: "How many neurons are in the human brain (in billions)?",
+                    answer: 86,
+                    explanation: "The human brain contains approximately 86 billion neurons, each connected to thousands of other neurons."
+                },
+                {
+                    question: "What is the boiling point of water in Fahrenheit?",
+                    answer: 212,
+                    explanation: "Water boils at 212°F (100°C) at standard atmospheric pressure at sea level."
+                },
+                {
+                    question: "How many chromosomes do humans have?",
+                    answer: 46,
+                    explanation: "Humans typically have 46 chromosomes arranged in 23 pairs, with one set inherited from each parent."
+                },
+                {
+                    question: "How many miles is the Earth from the Sun?",
+                    answer: 93000000,
+                    explanation: "Earth is approximately 93 million miles (150 million kilometers) from the Sun on average."
+                },
+                {
+                    question: "How many bones are in the adult human body?",
+                    answer: 206,
+                    explanation: "An adult human has 206 bones, though babies are born with about 300 bones that fuse together as they grow."
+                },
+                {
+                    question: "What percentage of the universe is dark matter?",
+                    answer: 27,
+                    explanation: "Dark matter makes up approximately 27% of the universe, with dark energy at 68% and ordinary matter only 5%."
+                },
+                {
+                    question: "How many moons does Jupiter have?",
+                    answer: 95,
+                    explanation: "Jupiter has 95 confirmed moons as of 2024, including the four large Galilean moons discovered in 1610."
+                },
+                {
+                    question: "What is the absolute zero temperature in Fahrenheit?",
+                    answer: -459,
+                    explanation: "Absolute zero is -459.67°F (-273.15°C), the theoretical temperature at which all molecular motion stops."
+                },
+                {
+                    question: "How many taste buds does the average human have?",
+                    answer: 10000,
+                    explanation: "The average adult has about 10,000 taste buds, which are replaced every 1-2 weeks."
+                },
+                {
+                    question: "What is the half-life of carbon-14 in years?",
+                    answer: 5730,
+                    explanation: "Carbon-14 has a half-life of 5,730 years, which is why it's useful for dating organic materials up to 50,000 years old."
+                },
+                {
+                    question: "How many miles per hour does Earth rotate at the equator?",
+                    answer: 1040,
+                    explanation: "Earth rotates at approximately 1,040 mph at the equator, completing one rotation every 24 hours."
+                },
+                {
+                    question: "What percentage of human DNA is shared with chimpanzees?",
+                    answer: 99,
+                    explanation: "Humans and chimpanzees share approximately 98.8% of their DNA, making chimps our closest living relatives."
+                },
+                {
+                    question: "How many gallons of blood does the human heart pump per day?",
+                    answer: 2000,
+                    explanation: "The human heart pumps about 2,000 gallons (7,570 liters) of blood per day, beating about 100,000 times."
+                }
+            ]
+        };
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame() {
+            // Get player names
+            players = [];
+            for (let i = 1; i <= 4; i++) {
+                const playerName = document.getElementById(`player${i}`).value.trim();
+                if (playerName) {
+                    players.push(playerName);
+                    scores[playerName] = 0;
+                }
+            }
+
+            if (players.length < 2) {
+                alert('Please enter at least 2 player names');
+                return;
+            }
+
+            showScreen('categoryScreen');
+        }
+
+        function selectCategory(category) {
+            selectedCategory = category;
+            
+            // Get questions for selected category or mix them
+            if (category === 'mixed') {
+                questions = [];
+                Object.values(questionDatabase).forEach(categoryQuestions => {
+                    questions.push(...categoryQuestions);
+                });
+                // Shuffle mixed questions
+                questions.sort(() => Math.random() - 0.5);
+            } else {
+                questions = [...questionDatabase[category]];
+                // Shuffle category questions
+                questions.sort(() => Math.random() - 0.5);
+            }
+            
+            // Take only 10 questions
+            questions = questions.slice(0, 10);
+            
+            startQuestion();
+        }
+
+        function startQuestion() {
+            currentPlayerIndex = 0;
+            currentGuesses = [];
+            
+            updateProgress();
+            showCurrentPlayer();
+            displayQuestion();
+            
+            showScreen('questionScreen');
+            document.getElementById('guessInput').value = '';
+            document.getElementById('guessInput').focus();
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        function showCurrentPlayer() {
+            document.getElementById('currentPlayerName').textContent = players[currentPlayerIndex];
+        }
+
+        function displayQuestion() {
+            document.getElementById('questionText').textContent = questions[currentQuestionIndex].question;
+        }
+
+        function submitGuess() {
+            const guess = parseInt(document.getElementById('guessInput').value);
+            
+            if (isNaN(guess)) {
+                alert('Please enter a valid number');
+                return;
+            }
+
+            currentGuesses.push({
+                player: players[currentPlayerIndex],
+                guess: guess
+            });
+
+            currentPlayerIndex++;
+
+            if (currentPlayerIndex < players.length) {
+                // Next player's turn
+                showCurrentPlayer();
+                document.getElementById('guessInput').value = '';
+                document.getElementById('guessInput').focus();
+            } else {
+                // All players have guessed
+                showResults();
+            }
+        }
+
+        function showResults() {
+            const correctAnswer = questions[currentQuestionIndex].answer;
+            const explanation = questions[currentQuestionIndex].explanation;
+
+            // Calculate distances and sort
+            currentGuesses.forEach(g => {
+                g.distance = Math.abs(g.guess - correctAnswer);
+            });
+            currentGuesses.sort((a, b) => a.distance - b.distance);
+
+            // Award points - handle ties properly
+            const pointsToAward = players.length;
+            let currentRank = 1;
+            let i = 0;
+            
+            while (i < currentGuesses.length) {
+                let j = i;
+                // Find all players with the same distance (tied)
+                while (j < currentGuesses.length && currentGuesses[j].distance === currentGuesses[i].distance) {
+                    j++;
+                }
+                
+                // Calculate points for this rank
+                const points = Math.max(1, pointsToAward - currentRank + 1);
+                
+                // Award same points to all tied players
+                for (let k = i; k < j; k++) {
+                    scores[currentGuesses[k].player] += points;
+                }
+                
+                // Update rank by the number of tied players
+                currentRank += (j - i);
+                i = j;
+            }
+
+            // Display results
+            document.getElementById('correctAnswer').textContent = correctAnswer.toLocaleString();
+            document.getElementById('explanation').textContent = explanation;
+
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = '';
+            
+            let displayRank = 1;
+            i = 0;
+            
+            while (i < currentGuesses.length) {
+                let j = i;
+                while (j < currentGuesses.length && currentGuesses[j].distance === currentGuesses[i].distance) {
+                    j++;
+                }
+                
+                const points = Math.max(1, pointsToAward - displayRank + 1);
+                
+                for (let k = i; k < j; k++) {
+                    resultsList.innerHTML += `
+                        <div class="player-result">
+                            <span>${displayRank}. ${currentGuesses[k].player}: ${currentGuesses[k].guess.toLocaleString()}</span>
+                            <span>+${points} points</span>
+                        </div>
+                    `;
+                }
+                
+                displayRank += (j - i);
+                i = j;
+            }
+
+            // Display current scores
+            displayScores('currentScores');
+
+            showScreen('resultsScreen');
+        }
+
+        function displayScores(elementId) {
+            const scoresElement = document.getElementById(elementId);
+            scoresElement.innerHTML = '<h3>Current Scores</h3>';
+            
+            const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            sortedScores.forEach(([player, score]) => {
+                scoresElement.innerHTML += `
+                    <div class="score-item">
+                        <span>${player}</span>
+                        <span>${score} points</span>
+                    </div>
+                `;
+            });
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < questions.length) {
+                startQuestion();
+            } else {
+                showFinalResults();
+            }
+        }
+
+        function showFinalResults() {
+            const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            
+            // Check for ties at the top
+            const topScore = sortedScores[0][1];
+            const winners = sortedScores.filter(([player, score]) => score === topScore);
+            
+            if (winners.length === 1) {
+                document.getElementById('winnerName').textContent = `${winners[0][0]} Wins!`;
+            } else if (winners.length === 2) {
+                document.getElementById('winnerName').textContent = `${winners[0][0]} and ${winners[1][0]} Tied!`;
+            } else {
+                const winnerNames = winners.map(w => w[0]);
+                const lastWinner = winnerNames.pop();
+                document.getElementById('winnerName').textContent = `${winnerNames.join(', ')} and ${lastWinner} Tied!`;
+            }
+            
+            document.getElementById('winnerScore').textContent = topScore;
+
+            displayScores('finalScores');
+
+            showScreen('finalScreen');
+        }
+
+        function resetGame() {
+            players = [];
+            currentPlayerIndex = 0;
+            currentQuestionIndex = 0;
+            currentGuesses = [];
+            scores = {};
+            selectedCategory = '';
+            questions = [];
+
+            document.querySelectorAll('input[type="text"]').forEach(input => {
+                input.value = '';
+            });
+
+            showScreen('titleScreen');
+        }
+
+        // Allow Enter key to submit guess
+        document.getElementById('guessInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitGuess();
+            }
+        });
+    </script>
+</body>
+</html>
